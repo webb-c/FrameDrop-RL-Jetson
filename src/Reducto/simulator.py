@@ -1,34 +1,19 @@
-from functools import partial
 from itertools import product
 from pathlib import Path
-import multiprocessing as mp
-import functools
-from pprint import pprint
-
-import numpy as np
-import pandas as pd
-
-from tqdm import tqdm
-from utils.differencer import DiffComposer
-from utils.codec import get_video_size
-from utils.data_loader import load_evaluation, load_diff_vector, load_diff_result, load_json, load_inference, \
-    dump_json
-from utils.evaluator import MetricComposer
-from utils.hashbuilder import HashBuilder, ThreshMap
-from utils.utils import flatten, show_stats
 import os
 import pickle
-from utils.model import Segment, Inference, InferenceResult, DiffVector, FrameEvaluation
+import numpy as np
 
-_target_acc = 0.90
-_tinyyolo_acc = 0.60
+from util.differencer import DiffComposer
+from util.data_loader import load_json
+from util.hashbuilder import HashBuilder, ThreshMap
+from util.utils import flatten, show_stats
 
 class Simulator:
 
     def __init__(self, datasets, **kwargs):
         self.datasets = datasets
         self.actual_size = kwargs.get('actual_size', 2113284)
-        self.video_root = Path(kwargs.get('video_root', '../../DATASET/test/split/'))
         self.root = Path(kwargs.get('result_root', 'data'))
         print(self.root)
         self.fps = kwargs.get('fps', 30)
@@ -115,7 +100,6 @@ class Simulator:
 
         print(self.name)
         print('-' * 41)
-        #TODO: WHY?????
         # evaluations['fractions'] = [1 - f for f in evaluations['fractions']]
         # show_stats(evaluations, ['fractions', 'accuracies'])
         evaluations['fractions'] = [f for f in evaluations['fractions']]
@@ -202,75 +186,6 @@ class Simulator:
         
         return segments
 
-
-    def load_result(self, dataset, subsets, differ, metric):
-        """dataset을 전달받아서, 각 segment에 대해 eval, diff_vector, result 결과를 저장된 경로로부터 불러와서 리스트로 저장해 반환한다. 
-        Args:
-            dataset (_type_): _description_
-            subsets (_type_): _description_
-            differ (_type_): _description_
-            metric (_type_): _description_
-        Calls:
-            self.get_segments()
-            self.eval_path()
-            self.diff_path()
-            reducto.data_loader.load_evaluation()
-            reducto.data_loader.load_diff_vector()
-            reducto.data_loader.load_diff_result()
-        Returns:
-            _type_: _description_
-        """
-        segments = self.get_segments(dataset, subsets)
-        evals = [load_evaluation(self.eval_path(seg), differ, metric) for seg in segments]
-        diff_vectors = [load_diff_vector(self.diff_path(seg), differ) for seg in segments]
-        diff_results = [load_diff_result(self.diff_path(seg), differ) for seg in segments]
-        assert len(evals) == len(diff_vectors) == len(diff_results)
-        
-        return evals, diff_vectors, diff_results
-
-
-    def load_inference(self, dataset, subsets): #DEBUG:
-        """dataset을 전달받아서, 각 segment에 대해 inference 결과를 저장된 경로로부터 불러와서 리스트로 저장해 반환한다.
-        Args:
-            dataset (str): 데이터셋
-            subsets (List): 해당 데이터셋이 포함하고 있는 subsets
-        Calls:
-            self.get_segments()
-            self.inter_path()
-            reducto.data_loader.load_inference()
-        Returns:
-            List: 각 segment에 대한 inference 결과가 저장된 리스트
-        """
-        segments = self.get_segments(dataset, subsets)
-        seg = segments[0]
-        print(seg)
-        print(self.infer_path(seg))
-        inference = [load_inference(self.infer_path(seg)) for seg in segments]
-        
-        return inference
-
-
-    def get_segment_size(self, dataset, subset, segment, selected_frames=None, log_name=None, scale=1):
-        """해당 video에 대하여, 선택한 frame이 주어졌을 때 video의 size(=frame_len)이 얼마나 줄어드는지 계산하여 반환한다.
-        Args:
-            dataset (_type_): _description_
-            subset (_type_): _description_
-            segment (_type_): _description_
-            selected_frames (_type_, optional): _description_. Defaults to None.
-            log_name (_type_, optional): _description_. Defaults to None.
-            scale (int, optional): _description_. Defaults to 1.
-        Calls:
-            reducto.codec.get_video_size()
-        Returns:
-            _type_: _description_
-        """
-        selected_frames = selected_frames or []
-        selected_frames = selected_frames if len(selected_frames) > 0 else None
-        video_path = self.video_root / dataset / subset / f'{segment}.mp4'
-        size = get_video_size(video_path, selected_frames, log_name, scale=scale)
-        
-        return size
-
     def frame_latency(self, summary, bandwidth, rtt, network_name=None, divided_by=4, scale=1):
         """evaluation 결과를 전달받아서, 현재 가상으로 설정한 네트워크 환경에 맞추어 이론적인 latency를 계산하여 결과를 반환한다. 
         Args:
@@ -317,164 +232,6 @@ class Simulator:
         return report
 
 
-class Optimal(Simulator):
-
-    def __init__(self, datasets, typ, classes, **kwargs):
-        super().__init__(datasets, **kwargs)
-        self.gpu_time = 1 / 40
-        classes_str = ':'.join([str(c) for c in classes])
-        self.network_logname = f'optimal_{typ}_{classes_str}'
-        self.type = typ
-        self.classes = classes
-        self.name = f'optimal {typ} ({classes})'
-        if self.type == 'coco':
-            self.evaluator = MetricComposer.from_json([{'type': 'coco', 'class': self.classes}])
-        else:
-            self.evaluator = None
-
-
-    def eval(self, dataset, subsets, query, print_action=False):
-        """하나의 데이터셋을 전달받아 각 query에 대해 inference결과가 있다면 불러오고, 존재하지 않으면 inference결과를 경로에 저장하고, 반환한다.
-        Args:
-            dataset (_type_): _description_
-            subsets (_type_): _description_
-            query (_type_): _description_
-        Calls:
-            self.get_segments()
-            self.load_inference()
-            reducto.data_loader.load_json()
-            reducto.data_loader.dump_json()
-        Returns:
-            _type_: _description_
-        """
-        segments = self.get_segments(dataset, subsets)
-        target_acc = query['target_acc']
-        inferences = self.load_inference(dataset, subsets)
-        output_path = f'data/optimal-{target_acc:.1f}/{dataset}_{self.network_logname}.json'
-        if Path(output_path).exists():
-            loaded_summary = load_json(output_path)
-            summary = [item for item in loaded_summary if item['dataset'] == dataset and item['subset'] in subsets]
-        else:
-            with multiprocessing.Pool() as pool:
-                result = pool.map(partial(self.select_frames, target_acc=target_acc), inferences)
-            summary = [
-                {
-                    'dataset': segments[index][0],
-                    'subset': segments[index][1],
-                    'segment': segments[index][2],
-                    'fraction': len(res['selected_frames']) / len(inferences[index].keys()),
-                    'evaluation': sum(res['scores']) / len(res['scores']),
-                    'selected_frames': res['selected_frames'],
-                }
-                for res, index in zip(result, range(len(segments)))
-            ]
-            dump_json(summary, output_path, mkdir=True)
-        return summary
-
-    def select_frames(self, inference, target_acc):
-        """특정 inference 결과에 대해, target_acc와 지금까지 처리한 결과의 acc를 비교하여 각 frame을 선택할지 말지를 결정하여 선택한 프레임과 프레임별 accuracy의 변화를 기록한 리스트를 반환한다. 
-        Args:
-            inference (_type_): _description_
-            target_acc (_type_): _description_
-        Calls:
-            Optimal.count_objects()
-            Optimal.get_counting_score()
-            Optimal.get_tagging_score()
-            self.get_detection_score()
-        Returns:
-            _type_: _description_
-        """
-        frame_ids = list(inference.keys())
-        summary = [
-            {
-                'fid': int(fid),
-                'count': Optimal.count_objects(inference[fid], self.classes),
-                'inference': inference[fid],
-            }
-            for fid in frame_ids
-        ]
-        selected_frames = [summary[0]['fid']]
-        scores = [1.0]
-        for fid in range(1, len(summary)):
-            last_selected_fid = selected_frames[-1]
-            if self.type == 'counting':
-                score = Optimal.get_counting_score(summary[fid]['count'], summary[last_selected_fid]['count'])
-            elif self.type == 'tagging':
-                score = Optimal.get_tagging_score(summary[fid]['count'], summary[last_selected_fid]['count'])
-            elif self.type == 'coco':
-                score = self.get_detection_score(summary[fid]['inference'], summary[last_selected_fid]['inference'])
-            new_scores = scores + [score]
-            if sum(new_scores) / len(new_scores) >= target_acc:
-                # if score >= target_acc:
-                scores.append(score)
-            else:
-                selected_frames.append(fid)
-                scores.append(1.0)
-        return {
-            'selected_frames': selected_frames,
-            'scores': scores,
-        }
-
-
-    @staticmethod
-    def count_objects(frame_inference, classes):
-        """선택한 class들 안에 있는 class의 길이를 inference 결과로부터 추출하여 반환한다.
-        Args:
-            frame_inference (_type_): _description_
-            classes (_type_): _description_
-        Returns:
-            _type_: _description_
-        """
-        count = len([c for c in frame_inference['detection_classes'] if c in classes])
-        return count
-
-
-    @staticmethod
-    def get_counting_score(count1, count2):
-        """두 개의 counting 결과를 비교하여, 동일하면 1, 다르다면 정의한 방식을 통해 score를 반환한다. 
-        Args:
-            count1 (_type_): _description_
-            count2 (_type_): _description_
-        Returns:
-            _type_: _description_
-        """
-        if count1 == count2:
-            return 1.0
-        return (max(count1, count2) - abs(count1 - count2)) / max(count1, count2)
-
-
-    @staticmethod
-    def get_tagging_score(count1, count2):
-        """두 개의 counting 결과를 비교하여 둘 중 하나라도 tagging이 되어있지 않다면 o점, 아니면 1점을 반환한다.
-        Args:
-            count1 (_type_): _description_
-            count2 (_type_): _description_
-        Returns:
-            _type_: _description_
-        """
-        if count1 == 0 or count2 == 0:
-            return 0.0
-        return 1.0
-
-
-    def get_detection_score(self, inference1, inference2):
-        """두 inference 결과를 전달받아서 object detection score를 비교한다. #TODO:
-        Args:
-            inference1 (_type_): _description_
-            inference2 (_type_): _description_
-        Calls:
-            MetricComposer.evaluate_single_frame() #REVIEW:
-        Returns:
-            _type_: _description_
-        """
-        result = self.evaluator.evaluate_single_frame(inference1, inference2)
-        if len(self.classes) == 0:
-            name = 'mAP-all'
-        else:
-            name = f'mAP-{":".join(str(i) for i in self.classes)}'
-        return result[name]
-
-
 class Reducto(Simulator):
 
     def __init__(self, datasets, **kwargs):
@@ -507,7 +264,7 @@ class Reducto(Simulator):
         return thresh_map
     
     #! IT'S MINE
-    def run(self, conf, dataset, subsets, writer):
+    def run(self, conf, dataset, subsets):
         dataset_mapping = {
             'JK-1' : 'JK',
             'JK-2' : 'JK',
@@ -538,14 +295,12 @@ class Reducto(Simulator):
                     'selected_frames' : selected_frames,
                     'fraction': len(selected_frames) / (len(diff_results) + 1)
                 }
-                fraction_change.append(1.0) ### tensor borad 기록하도록 수정하기
-                writer.add_scalar("Network/Fraction", diff_result['fraction'], i)
+                fraction_change.append(1.0) 
             else:
                 # fraction = diff_results[index][differ][thresh]['fraction']
                 # evaluation = evals[index][differ][thresh][metric]
                 diff_result = differ.process_video_in_run(thresh, diff_vector) 
                 fraction_change.append(diff_result['fraction'])
-                writer.add_scalar("Network/Fraction", diff_result['fraction'], i)
             
             diff_results.append(diff_result)
             
@@ -554,238 +309,9 @@ class Reducto(Simulator):
                 print("vector distance sum: ", distance)
                 print(diff_result)
             
+            ### Send Selected_frames ###
+            for i in range(1, len(diff_vector)+1):
+                if i in selected_frames:
+                    #TODO: Here!
+            
         return diff_results, fraction_change
-        
-    
-    # 테스트시에만 로컬에서 작동, 실제 실험에서는 평가 자체는 추후에 만든 영상을 가지고 따로 inference후 F1 score 계산.
-    #! IT'S MINE
-    def test(self, conf, segments, model, diff_results, evaluator, writer):
-        # pipeline running
-        f1_score_change = []
-        pbar = tqdm(total=len(segments))
-        for i, segment in enumerate(segments):
-            # -- segment ---------------------------------------------------
-            segment_record = Segment.find_or_save(segment.parent.name, segment.name)
-
-            # -- inference -------------------------------------------------
-            inference_record = Inference.objects(
-                segment=segment_record,
-                model=model.name,
-            ).first()
-            if inference_record:
-                inference = inference_record.to_json()
-            else:
-                inference = model.infer_video(segment)
-                inference_record = Inference(
-                    segment=segment_record,
-                    model=model.name,
-                    result=[InferenceResult.from_json(inf) for _, inf in inference.items()],
-                )
-                inference_record.save()
-            dump_json(inference, f'data/inference/{conf["dataset"]}/{segment.parent.name}/{segment.stem}.json', mkdir=True)
-            if conf["debug"]: print("In segment", segment, "\nInference: ", inference)
-
-            # -- evaluation ------------------------------------------------
-            frame_pairs = evaluator.get_frame_pairs(inference, diff_results[i], run=True)
-
-            per_frame_evaluations = {}
-            for metric in evaluator.keys:
-                metric_evaluations = FrameEvaluation.objects(segment=segment_record, evaluator=metric)
-                pairs = [(me.ground_truth, me.comparision) for me in metric_evaluations]
-                pairs_pending = [p for p in frame_pairs if p not in pairs]
-                with mp.Pool() as pool:
-                    eval_f = functools.partial(evaluator.evaluate_frame_pair, inference=inference, metric=metric)
-                    metric_evaluations_new = pool.map(eval_f, pairs_pending)
-                pair_evaluations_new = {
-                    pair: evaluation
-                    for pair, evaluation in zip(pairs_pending, metric_evaluations_new)
-                }
-                for pair, evaluation in pair_evaluations_new.items():
-                    frame_evaluation_record = FrameEvaluation(
-                        segment=segment_record,
-                        model=model.name,
-                        evaluator=metric,
-                        ground_truth=pair[0],
-                        comparision=pair[1],
-                        result=evaluation[metric],
-                    )
-                    frame_evaluation_record.save()
-                for me in metric_evaluations:
-                    if not per_frame_evaluations.get((me.ground_truth, me.comparision), None):
-                        per_frame_evaluations[(me.ground_truth, me.comparision)] = {}
-                    per_frame_evaluations[(me.ground_truth, me.comparision)][metric] = me.result
-                for pair, evaluation in pair_evaluations_new.items():
-                    if not per_frame_evaluations.get(pair, None):
-                        per_frame_evaluations[pair] = {}
-                    per_frame_evaluations[pair][metric] = evaluation[metric]
-
-            evaluations = evaluator.evaluate(inference, diff_results[i], per_frame_evaluations, segment, run=True)
-            
-            f1_score = evaluations["mAP-all"]
-            writer.add_scalar("Network/f1_score", f1_score, i)
-            f1_score_change.append(f1_score)
-            
-            dump_json(evaluations, f'data/evaluation/{conf["dataset"]}/{segment.parent.name}/{segment.stem}.json', mkdir=True)
-            
-            if conf["debug"]: print("In segment", segment, "\nevaluations: ", evaluations)
-            
-            pbar.update()
-            
-        return f1_score_change
-
-
-    def eval(self, dataset, subsets, query, print_action=False):
-        """Reducto 모델의 evaluation을 위한 코드
-        Args:
-            dataset (_type_): _description_
-            subsets (_type_): _description_
-            query (_type_): _description_
-        Calls:
-            self.get_segments()
-            self.load_result()
-            HashBuilder().generate_threshmap #REVIEW:
-            ThreshMap().get_thresh() #REVIEW:
-        Returns:
-            _type_: _description_
-        """
-        segments = self.get_segments(dataset, subsets)
-        metric = query['metric']
-        differ = query['differ']
-        target_acc = query['target_acc']
-        dist_thresh = query['distance']
-        safe_zone = query['safe']
-        evals, diff_vectors, diff_results = self.load_result(dataset, subsets, differ, metric)
-        length = len(evals)
-        boot = True
-        profiled_indexes = []
-        summary = {}
-        for index in range(length):
-            # starting
-            summary[index] = {
-                'start': index * self.segment_duration,
-                'taken': (index + 1) * self.segment_duration,
-            }
-            # bootstrapping
-            if len(profiled_indexes) < self.len_bootstrapping:
-                boot = True
-                profiled_indexes.append(index)
-                distance = -1
-                fraction = 1.0
-                evaluation = 1.0
-                summary[index]['sent'] = summary[index]['taken']
-                summary[index]['inf_done'] = summary[index]['sent'] + self.inference_time
-                summary[index]['prof_done'] = summary[index]['inf_done'] + self.profiling_time
-                # print("[bootstrapping phase] current len: ", len(profiled_indexes))
-            # dynamic phase
-            else:
-                profiled_available = [
-                    p_index for p_index in profiled_indexes
-                    if summary[p_index]['prof_done'] < summary[index]['taken']
-                ]
-                # if there is not enough profiled segments, still sends everything
-                if len(profiled_available) < self.len_bootstrapping:
-                    profiled_indexes.append(index)
-                    boot = True
-                    distance = -1
-                    fraction = 1.0
-                    evaluation = 1.0
-                    summary[index]['sent'] = summary[index]['taken']
-                    summary[index]['inf_done'] = summary[index]['sent'] + self.inference_time
-                    summary[index]['prof_done'] = summary[index]['inf_done'] + self.profiling_time
-                    # print("[bootstrapping phase] current len: ", len(profiled_indexes))
-                # good to start doing dynamic adoption
-                else:
-                    boot = False
-                    # print("[dynamic phase]")
-                    threshmap_init_dict = HashBuilder().generate_threshmap(
-                        [evals[i] for i in profiled_indexes],
-                        [diff_vectors[i] for i in profiled_indexes],
-                        target_acc=target_acc, safe_zone=safe_zone)
-                    thresh_map = ThreshMap(threshmap_init_dict[differ])
-                    thresh, distance = thresh_map.get_thresh(diff_vectors[index][differ])
-                    distance = np.sum(distance)
-                    # predicted threshold value and distance threshold checking
-                    print("KNN predicted threshold: ", thresh)
-                    print("vector distance sum: ", distance)
-                    if distance > dist_thresh:
-                        print("so far distance")
-                        profiled_indexes.append(index)
-                        fraction = 1.0
-                        evaluation = 1.0
-                        summary[index]['sent'] = summary[index]['taken'] + self.camera_diff_time
-                        summary[index]['inf_done'] = summary[index]['sent'] + self.inference_time
-                        summary[index]['prof_done'] = summary[index]['inf_done'] + self.profiling_time
-                    else:
-                        fraction = diff_results[index][differ][thresh]['fraction']
-                        evaluation = evals[index][differ][thresh][metric]
-                        summary[index]['sent'] = summary[index]['taken'] + self.camera_diff_time
-                        summary[index]['inf_done'] = summary[index]['sent'] + self.inference_time * fraction
-                        summary[index]['prof_done'] = -1
-                
-                print("index:", index, "fraction: ", fraction)
-
-            summary[index]['dataset'] = segments[index][0]
-            summary[index]['subset'] = segments[index][1]
-            summary[index]['segment'] = segments[index][2]
-            summary[index]['profiling?'] = int(index in profiled_indexes)
-            summary[index]['diff_vector'] = diff_vectors[index][differ]
-            summary[index]['distance'] = distance
-            summary[index]['fraction'] = fraction
-            summary[index]['evaluation'] = evaluation
-            if fraction == 1.0:
-                summary[index]['selected_frames'] = []
-            elif fraction < 1.0:
-                selected_frames = diff_results[index][differ][thresh]['selected_frames']
-                summary[index]['selected_frames'] = selected_frames
-            
-            if print_action and not boot:
-                print("in index ", index, "processed frame num ", len(summary[index]['selected_frames']))
-                #print("*selected frames\n", summary[index]['selected_frames'])
-        
-        summary_list = [summary[v] for v in range(self.len_bootstrapping, length)]
-        return summary_list
-
-
-class ReductoOptimal(Simulator):
-
-    def __init__(self, datasets, **kwargs):
-        super().__init__(datasets, **kwargs)
-        self.gpu_time = 1 / 40
-        self.network_logname = 'reducto_optimal'
-        self.name = 'reducto optimal'
-
-    def eval(self, dataset, subsets, query, print_action=False):
-        segments = self.get_segments(dataset, subsets)
-        metric = query['metric']
-        differ = query['differ']
-        target_acc = query['target_acc']
-        evals, diff_vectors, diff_results = self.load_result(dataset, subsets, differ, metric)
-
-        summary = []
-        for index in range(len(evals)):
-            good_threshes = [th for th, acc_dict in evals[index][differ].items()
-                             if acc_dict[metric] > target_acc]
-            good_fracs = [(th, diff_results[index][differ][th]['fraction'],
-                           evals[index][differ][th][metric]) for th in good_threshes]
-            good_fracs_sorted = sorted(good_fracs, key=lambda th_acc: th_acc[1])
-            if len(good_fracs_sorted) == 0:
-                optimal_fraction = 1.0
-                optimal_evaluation = 1.0
-            else:
-                optimal_fraction = good_fracs_sorted[0][1]
-                optimal_evaluation = good_fracs_sorted[0][2]
-            summary.append({
-                'fraction': optimal_fraction,
-                'evaluation': optimal_evaluation,
-                'dataset': segments[index][0],
-                'subset': segments[index][1],
-                'segment': segments[index][2],
-                'selected_frames': [],
-            })
-            
-            if print_action:
-                print("in index ", index, "processed frame num ", len(summary[index]['selected_frames']))
-                print("*selected frames\n", summary[index]['selected_frames'])
-            
-            
-        return summary
