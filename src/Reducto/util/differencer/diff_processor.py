@@ -4,7 +4,7 @@ import cv2
 import imutils
 import numpy as np
 
-from reducto.video_processor import VideoProcessor
+from util.video_processor import VideoProcessor_Reducto
 
 
 class DiffProcessor:
@@ -29,7 +29,7 @@ class DiffProcessor:
             diff_values: 각 frame간의 feature difference를 계산한 결과가 저장된ㄷ 리스트(=diff vector)를 반환한다.
         """
         diff_values = []
-        with VideoProcessor(video_path) as video:
+        with VideoProcessor_Reducto(video_path) as video:
             prev_frame = next(video)
             prev_frame = self.get_frame_feature(prev_frame)
             for frame in video:
@@ -49,7 +49,7 @@ class DiffProcessor:
         """
         selected_frames = [1]
         estimations = [1.0]
-        with VideoProcessor(video_path) as video:
+        with VideoProcessor_Reducto(video_path) as video:
             prev_frame = next(video)
             prev_feat = self.get_frame_feature(prev_frame)
             for frame in video:

@@ -313,5 +313,6 @@ class Reducto(Simulator):
             for i in range(1, len(diff_vector)+1):
                 if i in selected_frames:
                     #TODO: Here!
+                    pass
             
         return diff_results, fraction_change
