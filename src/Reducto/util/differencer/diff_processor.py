@@ -33,7 +33,6 @@ class DiffProcessor:
             prev_frame = next(video)
             prev_frame = self.get_frame_feature(prev_frame)
             for frame in video:
-                
                 frame = self.get_frame_feature(frame)
                 diff_value = self.cal_frame_diff(frame, prev_frame)
                 diff_values.append(diff_value)

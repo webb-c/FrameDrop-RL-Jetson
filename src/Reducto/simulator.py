@@ -2,6 +2,7 @@ from itertools import product
 from pathlib import Path
 import os
 import pickle
+import time
 import numpy as np
 
 from util.differencer import DiffComposer
@@ -234,7 +235,7 @@ class Simulator:
 
 class Reducto(Simulator):
 
-    def __init__(self, datasets, **kwargs):
+    def __init__(self, datasets, communicator, video_processor, jetson_mode, **kwargs):
         super().__init__(datasets, **kwargs)
         self.inference_fps = 40
         self.profiling_fps = 40
@@ -246,6 +247,9 @@ class Reducto(Simulator):
         self.gpu_time = 1 / 40
         self.network_logname = 'reducto'
         self.name = 'reducto'
+        self.communicator = communicator
+        self.video_processor = video_processor
+        self.jetson_mode = jetson_mode
 
 
     #! IT'S MINE
@@ -276,16 +280,16 @@ class Reducto(Simulator):
         
         differ = DiffComposer.from_jsonfile(conf['differ_dict_path'], conf['differ_types'])
         thresh_map = self.make_hashmap(conf, train_dataset, subsets)
-        segments = self.get_segments(dataset, subsets, video_list_path='test_video_list.json')
         
-        length = len(segments)
-        diff_results = []
-        fraction_change = []
         p = Path(conf['dataset_dir']) / dataset / subsets[0]
         segments_path = [f for f in sorted(p.iterdir()) if f.match('segment???.mp4')]
         
+        diff_results = []
+        fraction_change = []
         for i, segment in enumerate(segments_path):
             diff_vector = differ.get_diff_vector(differ_type=conf["differ"], filepath=segment)
+            time.sleep((1.0 / self.fps) * (len(diff_vector)+1))
+            
             thresh, distance = thresh_map.get_thresh(diff_vector)
             distance = np.sum(distance)
 
@@ -293,15 +297,14 @@ class Reducto(Simulator):
                 selected_frames = list(range(1, len(diff_vector)+1))
                 diff_result = {
                     'selected_frames' : selected_frames,
-                    'fraction': len(selected_frames) / (len(diff_results) + 1)
+                    'fraction': len(selected_frames) / (len(diff_vector) + 1)
                 }
                 fraction_change.append(1.0) 
             else:
-                # fraction = diff_results[index][differ][thresh]['fraction']
-                # evaluation = evals[index][differ][thresh][metric]
                 diff_result = differ.process_video_in_run(thresh, diff_vector) 
                 fraction_change.append(diff_result['fraction'])
-            
+                selected_frames = diff_result['selected_frames']
+                
             diff_results.append(diff_result)
             
             if conf['debug']:
@@ -310,9 +313,21 @@ class Reducto(Simulator):
                 print(diff_result)
             
             ### Send Selected_frames ###
+            self.video_processor.update_segment(segments_path=segment)
+            
             for i in range(1, len(diff_vector)+1):
                 if i in selected_frames:
-                    #TODO: Here!
-                    pass
+                    if self.jetson_mode:
+                        self.communicator.get_message()
+                        self.communicator.send_message("action")
+                        self.communicator.get_message()
+                        self.communicator.send_message(self.frame_shape)
+                    ret = self.video_processor.read_video(skip=False)
+                    if not ret:
+                        break
+                else:
+                    ret = self.video_processor.read_video(skip=True)
+                    if not ret:
+                        break
             
         return diff_results, fraction_change

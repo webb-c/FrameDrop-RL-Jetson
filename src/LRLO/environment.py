@@ -4,14 +4,12 @@ it uses replay buffers because we using offline-learning.
 """
 import collections
 import random
-import time
-import cv2
 import os
 import math
 import numpy as np
 from typing import Tuple, List, Union, Dict
 from util.get_state import cluster_pred, cluster_load, cluster_init
-from util.cal_quality import get_FFT, get_MSE, get_diff_info
+from util.cal_quality import get_FFT, get_MSE
 from util.cal_F1 import get_F1_with_idx
 
 ARRIVAL_MAX = 1.0

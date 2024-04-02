@@ -1,5 +1,3 @@
-import numpy as np
-from pyprnt import prnt
 import datetime
 from typing import Tuple, Union, Dict
 from agent import Agent

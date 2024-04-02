@@ -24,6 +24,7 @@ class VideoProcessor():
         #! reducto의 경우 처름으로 전달되는 path는 segment000.mp4
         self.cap = cv2.VideoCapture(self.video_path)
         _, f_init = self.cap.read()
+        time.sleep(1.0 / self.fps)
         self.frame_shape = str(f_init.shape[:2])
         self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     
@@ -52,16 +53,15 @@ class VideoProcessor():
         
         time.sleep(1.0 / self.fps)
         self.idx += 1
-
-    
-    def read_segment(self):
-        #TODO: reducto read segment(-> buffering)
-        pass
     
     
     def update_segment(self, segment_path):
         self.cap.relase()
         self.cap = cv2.VideoCapture(segment_path)
+        _, f_init = self.cap.read()
+        time.sleep(1.0 / self.fps)
+        self.frame_shape = str(f_init.shape[:2])
+        self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     
     
     def get_frame(self) -> Tuple[np.array, np.array, int]:

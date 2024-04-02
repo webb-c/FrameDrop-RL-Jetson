@@ -4,8 +4,6 @@ clustering for 3-dimension continuous state to (10,3) discrete state
 """
 import os
 import joblib
-import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.cluster import MiniBatchKMeans
 
 
