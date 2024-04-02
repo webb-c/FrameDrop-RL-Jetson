@@ -1,0 +1,19 @@
+environs:
+  dataset_root: "./data/split"
+  #dataset_root: "D:/VSC/INFOCOM/DATASET/test/split"
+  thresh_root: "./model/Reducto/config/threshes"
+  dataset_name: "JN"
+  subsets: [subset0]
+mongo:
+  host: localhost
+  port: 27017
+inference:
+  type: yolo
+differencer:
+  use_dict: true
+  types: [edge]
+motioner:
+  type: adapative_bg_learning
+evaluator:
+  - type: coco
+    class: []
