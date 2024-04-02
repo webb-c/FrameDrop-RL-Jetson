@@ -59,16 +59,11 @@ class Environment():
         self.video_processor.reset()
         self.sum_reward, self.sum_send_frame = 0, 0
         self.show_log = show_log
-        self.prev_frame, self.cur_frame, self.idx = self.video_processor.get_frame()
+        self.cur_frame, _, self.last_processed_frame, self.idx = self.video_processor.get_frame()
 
-        self.state = self.__observe_environment(self.prev_frame, self.cur_frame)
-            
+        self.state = self.__observe_environment(self.last_processed_frame, self.cur_frame)
         self.trans_list = []
-        if self.show_log :   
-            self.logList = []
-        
-        self.reward_print_count = 0
-        
+
         return self.state
 
 
@@ -103,18 +98,33 @@ class Environment():
         Calls:
             __triggerL Lyapunov based guide가 새로 들어왔을 때 변수 갱신, 리워드 계산을 위해 호출
         """
-        #TODO: communicator
-        done = False
-        ret = self.video_processor.read_video(skip=action)
+        # 현재 프레임은 처리
+        ret = self.video_processor.read_video(skip=False)
         if not ret:
             if self.run:
                 idx_list = self.video_processor.processed_frames_index
-                return idx_list, True
-            return self.trans_list, True
+                return idx_list, 0, True
+            return self.state, 0, True
 
+        if self.jetson_mode:
+            self.communicator.get_message()
+            self.communicator.send_message("action")
+            self.communicator.get_message()
+            self.communicator.send_message(self.frame_shape)
+
+        # skip
+        for _ in range(action):
+            ret = self.video_processor.read_video(skip=True)
+            if not ret :
+                if self.run:
+                    idx_list = self.video_processor.processed_frames_index
+                return idx_list, 0, True
+            return self.state, 0, True
+
+        self.cur_frame, _, self.last_processed_frame, self.idx = self.video_processor.get_frame()
         self.__trigger(action)
         
-        return self.trans_list, done
+        return self.trans_list, False
 
 
     def __trigger(self, action:int) -> float:
@@ -132,8 +142,7 @@ class Environment():
         self.trans_list.append(self.state)
         self.trans_list.append(action)
         
-        self.prev_frame, self.cur_frame, self.idx = self.video_processor.get_frame()
-        self.state = self.__observe_environment(self.prev_frame, self.cur_frame)
+        self.state = self.__observe_environment(self.last_processed_frame, self.cur_frame)
         self.trans_list.append(self.state)
         
         if not self.run :

@@ -192,11 +192,3 @@ def testor_reducto(args):
     
     return True
 
-
-if __name__ == "__main__":
-    opt = parse_args()
-    args = dict(**opt.__dict__)
-    ret = main(args)
-    
-    if not ret:
-        print("Testing ended abnormally.")

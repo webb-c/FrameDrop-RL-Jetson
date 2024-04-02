@@ -22,6 +22,7 @@ def parse_args() :
     parser.add_argument("-f1", "--f1_test", type=str2bool, default=False, help="showing f1 score")  # doing at Server
     
     parser.add_argument("-debug", "--debug_mode", type=str2bool, default=False, help="debug tool")
+    parser.add_argument("-jetson", "--jetson_mode", type=str2bool, default=False, help="running in Jetson Nano")
     
     ### lrlo
     parser.add_argument("-V", "--V", type=float, default=None, help="trade off parameter between stability & accuracy")
@@ -42,7 +43,6 @@ def parse_args() :
     parser.add_argument("-metric", "--metric", type=str, default="mAP-all", help="testing metric")
     
     return parser.parse_args()
-
 
 
 def parse_lrlo_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, Union[str, int, bool, float]]:
@@ -76,7 +76,6 @@ def parse_lrlo_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, U
     conf['video_path'] = os.path.join(root_data, conf['video_name'] + ".mp4")
     
     return conf
-
 
 
 def parse_frameHopper_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, Union[str, int, bool, float]]:

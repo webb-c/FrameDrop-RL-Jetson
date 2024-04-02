@@ -9,7 +9,6 @@ import cv2
 import os
 import math
 import numpy as np
-import win32pipe, win32file
 from typing import Tuple, List, Union, Dict
 from util.get_state import cluster_pred, cluster_load, cluster_init
 from util.cal_quality import get_FFT, get_MSE, get_diff_info
@@ -122,7 +121,7 @@ class Environment():
             self.sum_A = 0
             self.prev_A, self.target_A = self.action_dim, self.action_dim
 
-        self.prev_frame, self.cur_frame, self.last_skip_frame, self.idx = self.video_processor.get_frame()
+        self.cur_frame, self.last_skip_frame, _, self.idx = self.video_processor.get_frame()
         self.state = self.__observe_environment()
         
         self.trans_list = []
@@ -169,48 +168,51 @@ class Environment():
             __triggered_by_guideL Lyapunov based guide가 새로 들어왔을 때 변수 갱신, 리워드 계산을 위해 호출
         """
         #print("\naction:", action)
-        done = False
-        ret = self.video_processor.read_video(skip=action)
-        if not ret:
-            if self.run:
-                idx_list = self.video_processor.processed_frames_index
-                return idx_list, 0, True
-            return self.state, 0, True
-        
         new_A = -1
-        if self.jetson_mode:
-            for a in range(self.action_dim+1):
-                if a <= action :
-                    # self.skipped_frame
-                    #TODO: if skipping sleep...
-                    time.sleep(1.0 / self.fps)
-                    # self.communicator.get_message()
-                    # self.communicator.send_message("action")
-                    # self.communicator.get_message()
-                    # self.communicator.send_message(str((action+1)/self.action_dim))
-                elif a > action : 
-                    # processed frame
+        
+        for a in range(self.action_dim+1):
+            if a < action :
+                # self.skipped_frame
+                ret = self.video_processor.read_video(skip=True)
+                if not ret:
+                    if self.run:
+                        idx_list = self.video_processor.processed_frames_index
+                        return idx_list, 0, True
+                    return self.state, 0, True
+                
+            elif a >= action : 
+                # processed frame
+                if self.jetson_mode:
                     self.communicator.get_message()
                     self.communicator.send_message("action")
                     self.communicator.get_message()
                     self.communicator.send_message(self.frame_shape)
-            
-            self.communicator.get_omnet_message()
-            self.communicator.send_omnet_message("reward") 
-            path_cost = float(self.communicator.get_omnet_message())
-            self.communicator.send_omnet_message("ACK")
-            
+                    
+                ret = self.video_processor.read_video(skip=False)
+                if not ret:
+                    if self.run:
+                        idx_list = self.video_processor.processed_frames_index
+                        return idx_list, 0, True
+                    return self.state, 0, True
+        
+        if self.jetson_mode:
+            self.communicator.get_message()
+            self.communicator.send_message("reward") 
+            path_cost = float(self.communicator.get_message())
+            self.communicator.send_message("ACK")
+        
             ratio_A = ARRIVAL_MAX if path_cost == 0 else min(ARRIVAL_MAX, self.V / path_cost)
             new_A = math.floor(ratio_A*(self.action_dim))
+            
             if self.debug_mode:
                 print("path cost:", path_cost)
                 print("scaling cost using V (V/path_cost):", ratio_A)
                 print("arrival rate using fps:", new_A)
-        
-        self.prev_frame, self.cur_frame, self.last_skip_frame, self.idx = self.video_processor.get_frame()
+    
+        self.cur_frame, self.last_skip_frame, _, self.idx = self.video_processor.get_frame()
         r = self.__triggered_by_guide(new_A, action)
         
-        return self.state, r, done
+        return self.state, r, False
 
 
     def __triggered_by_guide(self, new_A:int, action:int) -> float:
@@ -423,57 +425,3 @@ class Environment():
             print(row)
         return
 
-
-class Communicator(Exception):
-    """OMNeT과의 통신을 위해 사용합니다.
-
-    Args:
-        Exception (_type_)
-    """
-    def __init__(self, pipeName:str, buffer_size:int, debug_mode:bool):
-        self.pipeName = pipeName
-        self.buffer_size = buffer_size
-        self.pipe = self.init_pipe(self.pipeName, self.buffer_size)
-        self.debug_mode = debug_mode
-
-
-    def send_omnet_message(self, msg:str):
-        if self.debug_mode:
-            print("sending msg:", msg)
-        win32file.WriteFile(self.pipe, msg.encode('utf-8'))  # wait unil complete reward cal & a(t)
-
-        
-    def get_omnet_message(self) -> str:
-        response_byte = win32file.ReadFile(self.pipe, self.buffer_size)
-        response_str = response_byte[1].decode('utf-8')
-        if self.debug_mode:
-            print("receive msg:", response_str)
-        return response_str
-
-
-    def close_pipe(self):
-        win32file.CloseHandle(self.pipe)
-
-
-    def init_pipe(self, pipeName:str, buffer_size:int) -> int :
-        pipe = None
-        print(pipeName)
-        print("waiting connect OMNeT++ ...")
-        try:
-            pipe = win32pipe.CreateNamedPipe(
-                pipeName,
-                win32pipe.PIPE_ACCESS_DUPLEX,
-                win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE | win32pipe.PIPE_WAIT,
-                1,
-                buffer_size,
-                buffer_size,
-                0,
-                None
-            )
-        except:
-            print("except : pipe error")
-            return -1
-
-        win32pipe.ConnectNamedPipe(pipe, None)
-        print("finshing connect OMNeT++")
-        return pipe

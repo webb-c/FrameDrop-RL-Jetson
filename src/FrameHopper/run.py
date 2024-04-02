@@ -22,7 +22,12 @@ def testor_frameHopper(conf:Dict[str, Union[str, int, bool, float]], communicato
             break
         _, _, s, _ = trans
         step += 1
-
+    
+    if conf['jetson_mode']:
+        env.communicator.get_message()
+        env.communicator.send_message("finish")
+        env.communicator.close_queue()
+        
     finish_time = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
     fraction_value = env.video_processor.num_processed / env.video_processor.num_all 
