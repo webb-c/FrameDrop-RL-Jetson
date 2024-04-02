@@ -13,9 +13,9 @@ def parse_args() :
     
     ### base
     parser.add_argument("-method", "--test_method", type=str, default=None, help="testing algorithm")
-    parser.add_argument("-video", "--video_path", type=str, default=None, help="testing video path")
+    parser.add_argument("-video", "--video_name", type=str, default=None, help="testing video path")
     parser.add_argument("-fps", "--fps", type=int, default=30, help="frame per sec")
-    parser.add_argument("-model", "--model_path", type=str, default=None, help="trained model path")
+    parser.add_argument("-model", "--model_name", type=str, default=None, help="trained model path")
     
     parser.add_argument("-write", "--write", type=str2bool, default=False, help="make output video?")
     parser.add_argument("-out", "--output_path", type=str, default=None, help="output video Path")
@@ -55,10 +55,11 @@ def parse_lrlo_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, U
     conf['state_num'] = 15
     conf['state_method'] = 1
     root_data = "./data/"
+    root_model = "./model/LRLO/ndarray/"
     root_cluster = "./model/LRLO/cluster/"
 
-    model_path = conf['model_path']
-    name = re.split(r"[/\\]", model_path)[-1][:-4]
+    conf['model_path'] = os.path.join(root_model, conf['model_name'])
+    name = conf['model_name'][:-4]
     parts = name.split('_')
     cluster_video_name = ""
     
@@ -87,10 +88,11 @@ def parse_frameHopper_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict
     """
     conf['state_num'] = 10
     root_data = "./data/"
+    root_model = "./model/FrameHopper/ndarray/"
     root_cluster = "./model/FrameHopper/cluster/"
 
-    model_path = conf['model_path']
-    name = re.split(r"[/\\]", model_path)[-1][:-4]
+    conf['model_path'] = os.path.join(root_model, conf['model_name'])
+    name = conf['model_name'][:-4]
     parts = name.split('_')
     cluster_video_name = ""
     
@@ -134,5 +136,7 @@ def parse_reducto_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str
     conf["differ_dict_path"] = Path(conf['environs']['thresh_root']) / f'{dataset_mapping[conf["dataset"]]}.json'
     conf["dataset_dir"] = root_data
     conf["differ_types"] = conf['differencer']['types']
+    
+    conf['video_path'] = root_data + conf['video_name'] + "/subset0/segment001.mp4"
     
     return conf
