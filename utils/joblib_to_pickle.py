@@ -25,6 +25,6 @@ def joblib_to_pickle(dir_path):
 
         
         
-dir_list = ['model/FrameHopper/cluster/', 'model/LRLO/cluster/']
+dir_list = ['model/FrameHopper/cluster/']
 for directory in dir_list:
     joblib_to_pickle(directory)

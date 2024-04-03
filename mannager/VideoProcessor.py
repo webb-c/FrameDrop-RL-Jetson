@@ -8,7 +8,7 @@ import numpy as np
 class VideoProcessor():
     """영상을 프레임단위로 읽어들이거나 내보내기 위한 관리자
     """
-    def __init__(self, video_path: str, fps: int, test_method: str, action_dim=30) :
+    def __init__(self, video_path: str, fps: int, test_method: str, size: int, action_dim=30) :
         """init
         """
         self.method = test_method
@@ -25,7 +25,7 @@ class VideoProcessor():
         self.cap = cv2.VideoCapture(self.video_path)
         _, f_init = self.cap.read()
         time.sleep(1.0 / self.fps)
-        frame_shape = (1, 3, f_init.shape[0], f_init.shape[1])
+        frame_shape = (1, 3, int(f_init.shape[0])//size, int(f_init.shape[1])//size)
         self.frame_shape = str(frame_shape)
         self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     

@@ -1,10 +1,11 @@
 import posix_ipc
 import sys
 
+
 class Communicator(Exception):
     def __init__(self, queue_name:str, buffer_size:int, is_agent:bool, debug_mode:bool):
-        self.send_queue_name = queue_name + "_agent_to_jetson" if is_agent else queue_name + "_jetson_to_agent"
-        self.recv_queue_name = queue_name + "_jetson_to_agent" if is_agent else queue_name + "_agent_to_jetson"
+        self.send_queue_name = "/" + queue_name + "_agent_to_jetson" if is_agent else "/" + queue_name + "_jetson_to_agent"
+        self.recv_queue_name = "/" + queue_name + "_jetson_to_agent" if is_agent else "/" + queue_name + "_agent_to_jetson"
         self.buffer_size = buffer_size
         self.debug_mode = debug_mode
         self.send_queue = self.init_queue(self.send_queue_name)
