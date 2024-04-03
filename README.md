@@ -1,5 +1,16 @@
 # FrameDrop Agent in Jetson Nano
 
+## Dataset
+[You can download here!](https://drive.google.com/file/d/1tUQgVmZ4p9e_femsJL3TQI570z7mPK_h/view?usp=sharing)
+
+- Jackson: https://www.youtube.com/watch?v=1EiC9bvVGnk
+- Scenic Drive: https://www.youtube.com/watch?v=7NSGFFb_YJs
+
+| Dataset      |  Duration | Resolution rate | fps | Data Size        | Total Frames |
+| ------------ | -------- | --------------- | --- | ---------------- | ------------ |
+|  Jackson (JK)       | 3m 11s   | 1920 × 1080     | 30  | 6.22 $\text{MB}$ | 5745         |
+|  Scenic Drive (SD) | 3m 0s    | 1920 × 1080     | 30  | 6.22 $\text{MB}$ | 5419         | 
+| Jetson Nano (JN)   | 1m 31s   | 640 x 640       | 30  | 1.23 $\text{MB}$ | 2730         |
 
 ## How to using
 📢 execute `scripts/{method}.sh`
