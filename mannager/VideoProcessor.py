@@ -25,7 +25,8 @@ class VideoProcessor():
         self.cap = cv2.VideoCapture(self.video_path)
         _, f_init = self.cap.read()
         time.sleep(1.0 / self.fps)
-        self.frame_shape = str(f_init.shape[:2])
+        frame_shape = (1, 3, f_init.shape[0], f_init.shape[1])
+        self.frame_shape = str(frame_shape)
         self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     
     
@@ -62,7 +63,6 @@ class VideoProcessor():
         self.cap = cv2.VideoCapture(segment_path)
         _, f_init = self.cap.read()
         time.sleep(1.0 / self.fps)
-        self.frame_shape = str(f_init.shape[:2])
         self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     
     
