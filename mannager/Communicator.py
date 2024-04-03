@@ -3,8 +3,6 @@ import sys
 import os
 
 class Communicator(Exception):
-    """Sender와의 통신을 위해 사용합니다.
-    """
     def __init__(self, queue_name:str, buffer_size:int, debug_mode:bool):
         self.queue_name = queue_name
         self.buffer_size = buffer_size

@@ -4,7 +4,7 @@ import cv2
 import imutils
 import numpy as np
 
-from util.video_processor import VideoProcessor_Reducto
+from src.Reducto.util.video_processor import VideoProcessor_Reducto
 
 
 class DiffProcessor:
@@ -168,7 +168,7 @@ class DiffProcessor:
             _type_: config. (e.g., PIXEL_THRESH_LOW_BOUND, AREA_BLUR_RAD, EDGE_BLUR_VAR, ...)
         """
         config = configparser.ConfigParser()
-        config.read('config/diff_config.ini')
+        config.read('model/Reducto/config/diff_config.ini')
         return config[dataset if dataset and dataset in config else 'default']
 
     def _load_section(self, section):

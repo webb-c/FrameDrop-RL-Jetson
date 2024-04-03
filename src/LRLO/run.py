@@ -1,7 +1,7 @@
 import datetime
 from typing import Tuple, Union, Dict
-from agent import Agent
-from environment import Environment
+from src.LRLO.agent import Agent
+from src.LRLO.environment import Environment
 
 
 def testor_lrlo(conf:Dict[str, Union[str, int, bool, float]], communicator, video_processor) -> bool:
@@ -15,15 +15,19 @@ def testor_lrlo(conf:Dict[str, Union[str, int, bool, float]], communicator, vide
     print("Ready ...")
     
     while not done:
-        require_skip = conf['action_dim'] - env.target_A
-        if conf["debug_mode"]:
-            print("require_skip: ", require_skip)
+        require_skip = 0
+        if conf['jetson_mode']:
+            require_skip = conf['action_dim'] - env.target_A
+            if conf["debug_mode"]:
+                print("require_skip: ", require_skip)
         a = agent.get_action(s, require_skip, False)
         a_list.append(a)
         s, _, done = env.step(a)
         if done:
             break
         step += 1
+        if conf['debug_mode']:
+            print(s, a, step)
 
     if conf['jetson_mode']:
         env.communicator.get_message()

@@ -4,8 +4,8 @@ it uses replay buffers because we using offline-learning.
 """
 import random
 from typing import Tuple, List, Union, Dict
-from util.cluster import *
-from util.obj import *
+from src.FrameHopper.util.cluster import *
+from src.FrameHopper.util.obj import *
 
 random.seed(42)
 
@@ -31,6 +31,7 @@ class Environment():
         self.debug_mode = conf['debug_mode']
         self.communicator = communicator
         self.video_processor = video_processor
+        self.jetson_mode = conf['jetson_mode']
         
         if not run:
             self.target_f1 = conf['target_f1']
@@ -56,7 +57,6 @@ class Environment():
             utils.cal_quality.get_FFT(): run 모드일 때 FFT 계산을 위해 사용한다.
             utils.get_state.cluster_pred: train, Q-learning에서 state를 구하기 위해 사용한다.
         """
-        self.video_processor.reset()
         self.sum_reward, self.sum_send_frame = 0, 0
         self.show_log = show_log
         self.cur_frame, _, self.last_processed_frame, self.idx = self.video_processor.get_frame()
@@ -103,8 +103,8 @@ class Environment():
         if not ret:
             if self.run:
                 idx_list = self.video_processor.processed_frames_index
-                return idx_list, 0, True
-            return self.state, 0, True
+                return idx_list, True
+            return self.trans_list, True
 
         if self.jetson_mode:
             self.communicator.get_message()
@@ -118,8 +118,8 @@ class Environment():
             if not ret :
                 if self.run:
                     idx_list = self.video_processor.processed_frames_index
-                return idx_list, 0, True
-            return self.state, 0, True
+                    return idx_list, True
+                return self.trans_list, True
 
         self.cur_frame, _, self.last_processed_frame, self.idx = self.video_processor.get_frame()
         self.__trigger(action)

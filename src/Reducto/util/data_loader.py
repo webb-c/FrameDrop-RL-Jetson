@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from util.utils import assert_list
+from src.Reducto.util.utils import assert_list
 
 
 def load_yaml(filepath):

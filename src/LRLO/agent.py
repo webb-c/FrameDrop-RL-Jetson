@@ -31,7 +31,7 @@ class Agent():
             self.eps, self.eps_dec, self.eps_min = conf['eps_init'], conf['eps_dec'], conf['eps_min']
             self.lr, self.gamma = conf['learning_rate'], conf['gamma']
         
-        if conf['is_continue'] or self.run : 
+        if self.run : 
             self.qtable = self.__load_model(conf['model_path'])
         else :
             self.qtable = np.zeros((self.state_num, self.action_dim+1))  # s, a

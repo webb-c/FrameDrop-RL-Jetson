@@ -5,10 +5,10 @@ import pickle
 import time
 import numpy as np
 
-from util.differencer import DiffComposer
-from util.data_loader import load_json
-from util.hashbuilder import HashBuilder, ThreshMap
-from util.utils import flatten, show_stats
+from src.Reducto.util.differencer import DiffComposer
+from src.Reducto.util.data_loader import load_json
+from src.Reducto.util.hashbuilder import HashBuilder, ThreshMap
+from src.Reducto.util.utils import flatten, show_stats
 
 class Simulator:
 
@@ -16,7 +16,6 @@ class Simulator:
         self.datasets = datasets
         self.actual_size = kwargs.get('actual_size', 2113284)
         self.root = Path(kwargs.get('result_root', 'data'))
-        print(self.root)
         self.fps = kwargs.get('fps', 30)
         self.segment_duration = kwargs.get('segment_duration', 5.0)
         self.gpu_time = -1
@@ -99,7 +98,7 @@ class Simulator:
                 other['sizes'].append(network_summary['sizes'])
                 other['true_sizes'].append(network_summary['true_sizes'])
 
-        print(self.name)
+        # print(self.name)
         print('-' * 41)
         # evaluations['fractions'] = [1 - f for f in evaluations['fractions']]
         # show_stats(evaluations, ['fractions', 'accuracies'])
@@ -235,7 +234,7 @@ class Simulator:
 
 class Reducto(Simulator):
 
-    def __init__(self, datasets, communicator, video_processor, jetson_mode, **kwargs):
+    def __init__(self, datasets, communicator, video_processor, jetson_mode, debug_mode, **kwargs):
         super().__init__(datasets, **kwargs)
         self.inference_fps = 40
         self.profiling_fps = 40
@@ -250,6 +249,7 @@ class Reducto(Simulator):
         self.communicator = communicator
         self.video_processor = video_processor
         self.jetson_mode = jetson_mode
+        self.debug_mode = debug_mode
 
 
     #! IT'S MINE
@@ -288,7 +288,8 @@ class Reducto(Simulator):
         fraction_change = []
         for i, segment in enumerate(segments_path):
             diff_vector = differ.get_diff_vector(differ_type=conf["differ"], filepath=segment)
-            time.sleep((1.0 / self.fps) * (len(diff_vector)+1))
+            if i == 0:
+                time.sleep((1.0 / self.fps) * (len(diff_vector)+1))
             
             thresh, distance = thresh_map.get_thresh(diff_vector)
             distance = np.sum(distance)
@@ -307,15 +308,17 @@ class Reducto(Simulator):
                 
             diff_results.append(diff_result)
             
-            if conf['debug']:
+            if self.debug_mode:
                 print("KNN predicted threshold: ", thresh)
                 print("vector distance sum: ", distance)
                 print(diff_result)
             
             ### Send Selected_frames ###
-            self.video_processor.update_segment(segments_path=segment)
+            self.video_processor.update_segment(segment_path=str(segment))
             
             for i in range(1, len(diff_vector)+1):
+                if self.debug_mode:
+                    print("segment:", segment, "\tidx:", i)
                 if i in selected_frames:
                     if self.jetson_mode:
                         self.communicator.get_message()

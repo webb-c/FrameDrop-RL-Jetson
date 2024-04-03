@@ -53,10 +53,12 @@ class VideoProcessor():
         
         time.sleep(1.0 / self.fps)
         self.idx += 1
+        
+        return True
     
     
     def update_segment(self, segment_path):
-        self.cap.relase()
+        self.cap.release()
         self.cap = cv2.VideoCapture(segment_path)
         _, f_init = self.cap.read()
         time.sleep(1.0 / self.fps)

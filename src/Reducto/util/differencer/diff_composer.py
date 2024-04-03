@@ -1,5 +1,5 @@
-from util.data_loader import load_json
-from util.differencer import DiffProcessor
+from src.Reducto.util.data_loader import load_json
+from src.Reducto.util.differencer import DiffProcessor
 
 
 class DiffComposer:
@@ -23,7 +23,7 @@ class DiffComposer:
             for feature, threshes in differ_dict.items()
             if feature in differencer_types
         }
-        print("differencers: ", differencers)
+        # print("differencers: ", differencers)
         return DiffComposer(differencers)
 
     @staticmethod

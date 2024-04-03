@@ -8,9 +8,9 @@ import os
 import math
 import numpy as np
 from typing import Tuple, List, Union, Dict
-from util.get_state import cluster_pred, cluster_load, cluster_init
-from util.cal_quality import get_FFT, get_MSE
-from util.cal_F1 import get_F1_with_idx
+from src.LRLO.util.get_state import cluster_pred, cluster_load, cluster_init
+from src.LRLO.util.cal_quality import get_FFT, get_MSE
+from src.LRLO.util.cal_F1 import get_F1_with_idx
 
 ARRIVAL_MAX = 1.0
 
@@ -80,9 +80,12 @@ class Environment():
         self.V = conf['V']
         self.debug_mode = conf['debug_mode']
         self.action_dim = conf['action_dim']
+        self.radius = conf['radius']
         
         self.communicator = communicator
         self.video_processor = video_processor
+        self.jetson_mode = conf['jetson_mode']
+        
         self.frame_shape = self.video_processor.frame_shape
         self.model = cluster_init(conf['state_num'])
         print("load cluster model in init...")

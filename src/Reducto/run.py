@@ -1,5 +1,5 @@
 import datetime
-from simulator import Reducto
+from src.Reducto.simulator import Reducto
 
 
 datasets = [
@@ -32,7 +32,7 @@ def testor_reducto(conf, communicator, video_processor):
     Args:
         args (dict): testing argument dictionary
     """
-    simulator = Reducto(datasets, communicator, video_processor, conf['jetson_mode'])
+    simulator = Reducto(datasets, communicator, video_processor, conf['jetson_mode'], conf['debug_mode'])
     
     diff_results, fraction_change = simulator.run(conf, conf['dataset'], ['subset0'])
     idx_list = [result['selected_frames'] for result in diff_results]
@@ -48,5 +48,5 @@ def testor_reducto(conf, communicator, video_processor):
     conf['idx_list'] = idx_list
     conf['fraction'] = avg_fraction
     
-    return True
+    return True, finish_time
 

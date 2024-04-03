@@ -3,7 +3,7 @@ import numpy as np
 from sklearn import neighbors
 from pyprnt import prnt
 
-from util.differencer import DiffProcessor
+from src.Reducto.util.differencer import DiffProcessor
 
 
 class ThreshMap:

@@ -1,7 +1,7 @@
 import datetime
 from typing import Tuple, Union, Dict
-from agent import Agent
-from environment import Environment
+from src.FrameHopper.agent import Agent
+from src.FrameHopper.environment import Environment
 
 
 def testor_frameHopper(conf:Dict[str, Union[str, int, bool, float]], communicator, video_processor) -> bool:
@@ -22,6 +22,8 @@ def testor_frameHopper(conf:Dict[str, Union[str, int, bool, float]], communicato
             break
         _, _, s, _ = trans
         step += 1
+        if conf['debug_mode']:
+            print(s, a, step)
     
     if conf['jetson_mode']:
         env.communicator.get_message()

@@ -12,17 +12,19 @@ from utils.util import save_parameters_to_csv
 
 def main(conf:Dict[str, Union[str, int, bool, float]]) -> bool:
     
-    if conf['test_method'] == "Reducto":
+    if conf['test_method'] == "reducto":
         conf = parse_reducto_test(conf)
         testor = testor_reducto
-    elif conf['test_method'] == "FrameHopper":
+    elif conf['test_method'] == "frameHopper":
         conf = parse_frameHopper_test(conf)
         testor = testor_frameHopper
     elif conf['test_method'] == "LRLO":
         conf = parse_lrlo_test(conf)
         testor = testor_lrlo
     
-    communicator = Communicator(queue_name=conf['test_method'], buffer_size=200000, debug_mode=conf['debug_mode'])
+    communicator = None
+    if conf['jetson_mode']:
+        communicator = Communicator(queue_name=conf['test_method'], buffer_size=200000, debug_mode=conf['debug_mode'])
     video_processor = VideoProcessor(video_path=conf['video_path'], fps=conf['fps'], test_method=conf['test_method'])
     
     start_time = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
@@ -34,7 +36,7 @@ def main(conf:Dict[str, Union[str, int, bool, float]]) -> bool:
     print("\n✱ start time :\t", start_time)
     print("✱ finish time :\t", finish_time)
     
-    save_parameters_to_csv(conf)
+    save_parameters_to_csv(start_time, conf)
     
     return True
 

@@ -54,6 +54,7 @@ def parse_lrlo_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, U
     """
     conf['state_num'] = 15
     conf['state_method'] = 1
+    conf['radius'] = 60
     root_data = "./data/"
     root_model = "./model/LRLO/ndarray/"
     root_cluster = "./model/LRLO/cluster/"
@@ -129,7 +130,7 @@ def parse_reducto_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str
     conf['cluster_path'] = os.path.join(root_cluster, dataset_mapping[conf['dataset']] + "_" + str(conf['safe_zone']) + "_" + str(conf['target_acc']) + ".pkl")
     conf['config_path'] = os.path.join(root_config, conf['video_name'] + ".yaml")
     
-    with open(conf["conf_path"], 'r') as y:
+    with open(conf["config_path"], 'r') as y:
         args = yaml.load(y, Loader=yaml.FullLoader)
     conf.update(args)
     
