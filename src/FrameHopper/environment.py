@@ -31,6 +31,7 @@ class Environment():
         self.debug_mode = conf['debug_mode']
         self.communicator = communicator
         self.video_processor = video_processor
+        self.frame_shape = self.video_processor.frame_shape
         self.jetson_mode = conf['jetson_mode']
         
         if not run:

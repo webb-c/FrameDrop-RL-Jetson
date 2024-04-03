@@ -248,6 +248,7 @@ class Reducto(Simulator):
         self.name = 'reducto'
         self.communicator = communicator
         self.video_processor = video_processor
+        self.frame_shape = self.video_processor.frame_shape
         self.jetson_mode = jetson_mode
         self.debug_mode = debug_mode
 
