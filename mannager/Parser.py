@@ -11,7 +11,7 @@ from utils.util import str2bool
 def parse_args() : 
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("-size", "--size", type=str, default=1, help="resize ratio (1/size)")
+    parser.add_argument("-size", "--size", type=float, default=1.0, help="resize ratio (1/size)")
     ### base
     parser.add_argument("-method", "--test_method", type=str, default=None, help="testing algorithm")
     parser.add_argument("-video", "--video_name", type=str, default=None, help="testing video path")

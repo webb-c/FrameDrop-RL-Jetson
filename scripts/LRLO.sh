@@ -1,4 +1,4 @@
-python3 run.py -method LRLO -video JN -model 240331-145303_videopath_JN_rewardmethod_11_importantmethod_021_actiondim_5_threshold_0.5_statemethod_1.npy -jetson t -V 10000 
+python3 run.py -method LRLO -video JN -model 240331-145303_videopath_JN_rewardmethod_11_importantmethod_021_actiondim_5_threshold_0.5_statemethod_1.npy -jetson t -V 10000
 python3 run.py -method LRLO -video JN -model 240329-065208_videopath_JN_rewardmethod_11_importantmethod_021_actiondim_15_threshold_0.4_statemethod_1.npy -jetson t -V 10000 
 python3 run.py -method LRLO -video SD-1 -model 240329-010114_videopath_SD_rewardmethod_11_importantmethod_021_radius_120_actiondim_5_threshold_0.2_statemethod_1.npy -jetson t -V 10000 
 python3 run.py -method LRLO -video SD-1 -model 240331-145253_videopath_SD_rewardmethod_10_importantmethod_021_radius_120_actiondim_15_threshold_0.1_statemethod_1.npy  -jetson t -V 10000 
