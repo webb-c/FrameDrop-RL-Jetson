@@ -24,7 +24,7 @@ def main(conf:Dict[str, Union[str, int, bool, float]]) -> bool:
     
     communicator = None
     if conf['jetson_mode']:
-        communicator = Communicator(queue_name=conf['test_method'], buffer_size=200000, debug_mode=conf['debug_mode'])
+        communicator = Communicator(queue_name=conf['test_method'], buffer_size=200000, is_agent=True, debug_mode=conf['debug_mode'])
     video_processor = VideoProcessor(video_path=conf['video_path'], fps=conf['fps'], test_method=conf['test_method'])
     
     start_time = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
