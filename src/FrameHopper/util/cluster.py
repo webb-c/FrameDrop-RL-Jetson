@@ -3,7 +3,7 @@
 clustering for 3-dimension continuous state to (10,3) discrete state 
 """
 import os
-import joblib
+import pickle
 from sklearn.cluster import MiniBatchKMeans
 
 
@@ -30,12 +30,14 @@ def train_cluster(model, data, visualize=False):
 def save_cluster(model, cluster_path): 
     os.makedirs(os.path.dirname(cluster_path), exist_ok=True)
     
-    joblib.dump(model, cluster_path)
+    with open(cluster_path, 'wb') as file:
+        pickle.dump(model, file)
     return
 
 
 def load_cluster(cluster_path):
-    model = joblib.load(cluster_path)
+    with open(cluster_path, 'rb') as file:
+        model = pickle.load(file)
     return model
 
 

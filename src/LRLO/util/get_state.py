@@ -1,7 +1,7 @@
 """
 clustering for 3-dimension continuous state to (10,3) discrete state 
 """
-import joblib
+import pickle
 import pandas as pd
 from sklearn.cluster import KMeans
 
@@ -12,12 +12,14 @@ def cluster_init(state_num=15):
 def cluster_train(model, data, clusterPath, visualize=False):
     print("start clustering for inputVideo")
     model.fit(data)
-    joblib.dump(model, clusterPath)
+    with open(clusterPath, 'wb') as file:
+        pickle.dump(model, file)
     return model
 
 
 def cluster_load(clusterPath):
-    model = joblib.load(clusterPath)
+    with open(clusterPath, 'rb') as file:
+        model = pickle.load(file)
     return model
 
 
