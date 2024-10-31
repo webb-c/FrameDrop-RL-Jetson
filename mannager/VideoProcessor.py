@@ -21,8 +21,8 @@ class VideoProcessor():
         if self.method != 'reducto':
             self.action_dim = action_dim
             
-        #! reducto의 경우 처름으로 전달되는 path는 segment000.mp4
         self.cap = cv2.VideoCapture(self.video_path)
+        self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         _, f_init = self.cap.read()
         time.sleep(1.0 / self.fps)
         frame_shape = (1, 3, int(f_init.shape[0]//size), int(f_init.shape[1]//size))
@@ -52,7 +52,7 @@ class VideoProcessor():
         if not ret :
             return False
         
-        time.sleep(1.0 / self.fps)
+        # time.sleep(1.0 / self.fps)
         self.idx += 1
         
         return True
@@ -62,7 +62,7 @@ class VideoProcessor():
         self.cap.release()
         self.cap = cv2.VideoCapture(segment_path)
         _, f_init = self.cap.read()
-        time.sleep(1.0 / self.fps)
+        # time.sleep(1.0 / self.fps)
         self.cur_frame, self.last_skip_frame, self.last_processed_frame = f_init, f_init, f_init
     
     

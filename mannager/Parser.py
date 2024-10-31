@@ -44,9 +44,9 @@ def parse_args() :
     parser.add_argument("-metric", "--metric", type=str, default="mAP-all", help="testing metric")
     
     ### Reducto
-    parser.add_argument('-latency', '--img_size', type=int, default=600, help='input image shape')
-    parser.add_argument('-latency', '--latency_constraint', type=int, default=0.001, help='latency constraint')
-    
+    parser.add_argument('-img', '--img_size', type=int, default=600, help='input image shape')
+    parser.add_argument('-latency', '--latency_constraint', type=float, default=0.001, help='latency constraint')
+    parser.add_argument('--device', type=int, default=0, help='CUDA device')
     
     return parser.parse_args()
 

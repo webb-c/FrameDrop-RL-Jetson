@@ -1,22 +1,21 @@
 import datetime
-from utils.util import get_optimal_parameter, cal_fraction
+from src.cao.utils.util import get_optimal_parameter
 from typing import Tuple, Union, Dict
-from test import test_model
+from src.cao.test import test_model
 
 def testor_cao(conf:Dict[str, Union[str, int, bool, float]], communicator, video_processor) -> bool:
     
     print("Ready ...")
     start_time = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
-    #!TODO
-    sf, rf, accuracy = get_optimal_parameter(conf['latency_constraint'])
-    fraction_value = cal_fraction(sf, rf)
-    rounded_fraction = round(fraction_value, 4)
-    
+    sf, rf, accuracy = get_optimal_parameter(conf)
+    conf['sf'] = sf
+    conf['rf'] = rf
     conf['accuracy'] = accuracy
-    conf['fraction'] = rounded_fraction
     
-    ret = test_model(conf, start_time, video_processor, communicator, jetson_mode=True)
+    fraction_value = test_model(conf, start_time, video_processor, communicator, jetson_mode=True)
+    rounded_fraction = round(fraction_value, 4)
+    conf['fraction'] = rounded_fraction
     
     if conf['jetson_mode']:
         communicator.get_message()

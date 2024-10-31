@@ -20,7 +20,7 @@ def str2bool(v) :
 
 def save_parameters_to_csv(start_time: str, conf: Dict[str, Union[str, int, bool, float]]):
     end_time = datetime.datetime.now().strftime("%y%m%d-%H%M%S") 
-    desired_keys = ['test_method', 'video_path', 'cluster_path', 'model_path', 'idx_list']
+    desired_keys = ['test_method', 'video_path', 'cluster_path', 'model_path', 'idx_list', 'sf', 'rf', 'avg_f1', 'fraction']
 
     csv_file_path = 'test_config.csv'
     

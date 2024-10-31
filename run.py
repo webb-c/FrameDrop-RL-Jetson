@@ -39,8 +39,6 @@ def main(conf:Dict[str, Union[str, int, bool, float]]) -> bool:
     
     print("Testing Finish !")
     print("\n✱ start time :\t", start_time)
-    if conf['test_method'] == "cao":
-        print("F1_score: \t", ret)
     print("✱ finish time :\t", finish_time)
     
     save_parameters_to_csv(start_time, conf)
