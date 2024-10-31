@@ -33,6 +33,12 @@ def test_model(conf, start_time, video_processor, communicator=None, jetson_mode
         send_frame_shape = downscaling_for_send_with_dummy(input_frame, output, conf['sf'], conf['rf']) 
         # _ = downscaling(input_frame, output, conf['sf'], conf['rf']) 
         # send_frame_shape = (1, 1, 1, 600)
+        
+        if jetson_mode:
+            communicator.get_message()
+            communicator.send_message("action")
+            communicator.get_message()
+            communicator.send_message(str(send_frame_shape))
 
     fraction_value = np.prod(send_frame_shape) / (3*conf['img_size']*conf['img_size'])
     return fraction_value
