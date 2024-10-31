@@ -52,7 +52,7 @@ class VideoProcessor():
         if not ret :
             return False
         
-        time.sleep(1.0 / self.fps)
+        # time.sleep(1.0 / self.fps)
         self.idx += 1
         
         return True

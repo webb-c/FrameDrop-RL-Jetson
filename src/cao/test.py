@@ -31,8 +31,6 @@ def test_model(conf, start_time, video_processor, communicator=None, jetson_mode
 
         output = model(input_frame)
         send_frame_shape = downscaling_for_send_with_dummy(input_frame, output, conf['sf'], conf['rf']) 
-        # _ = downscaling(input_frame, output, conf['sf'], conf['rf']) 
-        # send_frame_shape = (1, 1, 1, 600)
         
         if jetson_mode:
             communicator.get_message()

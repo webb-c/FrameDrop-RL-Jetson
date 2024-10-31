@@ -129,7 +129,86 @@ def merge_patches(origin_patches, downscaled_patches, location_info, R, N):
 #     return N_orign, N_ds, origin_patch_shape, downscaled_patch_shape
 
 
+# def downscaling(img, feature, sf, rf):
+#     img = img.squeeze(0)
+#     feature = feature.squeeze(0)
+
+#     N = feature.shape[-1]
+#     R = img.shape[-1]
+#     N_ds = int(N * N * (1 - sf))
+#     N_orign = N * N - N_ds
+
+#     # Flatten feature and select indices for downscaling
+#     flattened_features = feature.view(-1)
+#     _, indices = torch.topk(flattened_features, N_ds, largest=False)
+
+#     # Compute patch size
+#     patch_size = R // N
+#     origin_patch_shape = (1, 3, patch_size, patch_size)
+
+#     # Initialize a tensor for downscaled patches
+#     downscaled_patches = []
+    
+#     for idx in indices:
+#         row = idx // N
+#         col = idx % N
+#         patch_start_row = row * patch_size
+#         patch_end_row = (row + 1) * patch_size
+#         patch_start_col = col * patch_size
+#         patch_end_col = (col + 1) * patch_size
+
+#         # Extract and downscale the patch
+#         patch = img[..., patch_start_row:patch_end_row, patch_start_col:patch_end_col]
+#         downscaled_patch = F.interpolate(patch.unsqueeze(0), scale_factor=rf, mode='bilinear', align_corners=False).squeeze(0)
+#         downscaled_patches.append(downscaled_patch)
+
+#     downscaled_patch_shape = downscaled_patches[0].shape if downscaled_patches else origin_patch_shape
+
+#     return N_orign, N_ds, origin_patch_shape, downscaled_patch_shape
+
+
+
+# def downscaling(img, feature, sf, rf):
+#     img = img.squeeze(0)
+#     feature = feature.squeeze(0)
+
+#     N = feature.shape[-1]
+#     R = img.shape[-1]
+#     N_ds = int(N * N * (1 - sf))
+#     N_orign = N * N - N_ds
+
+#     # Flatten feature and select indices for downscaling
+#     flattened_features = feature.view(-1)
+#     _, indices = torch.topk(flattened_features, N_ds, largest=False)
+
+#     # Compute patch size
+#     patch_size = R // N
+#     origin_patch_shape = (1, 3, patch_size, patch_size)
+
+#     # Calculate start and end row/col indices for all patches
+#     rows = indices // N
+#     cols = indices % N
+#     patch_start_rows = rows * patch_size
+#     patch_end_rows = patch_start_rows + patch_size
+#     patch_start_cols = cols * patch_size
+#     patch_end_cols = patch_start_cols + patch_size
+
+#     # Collect all patches in one operation
+#     patches = [img[..., patch_start_rows[i]:patch_end_rows[i], patch_start_cols[i]:patch_end_cols[i]]
+#                for i in range(len(indices))]
+
+#     # Stack patches for batch interpolation
+#     stacked_patches = torch.stack(patches)
+#     downscaled_patches = F.interpolate(stacked_patches, scale_factor=rf, mode='bilinear', align_corners=False)
+
+#     # Extract the shape of downscaled patches
+#     downscaled_patch_shape = downscaled_patches[0].shape if downscaled_patches.numel() > 0 else origin_patch_shape
+
+#     return N_orign, N_ds, origin_patch_shape, downscaled_patch_shape
+
+
 def downscaling(img, feature, sf, rf):
+    # GPU로 이미지와 feature 이동
     img = img.squeeze(0)
     feature = feature.squeeze(0)
 
@@ -146,22 +225,24 @@ def downscaling(img, feature, sf, rf):
     patch_size = R // N
     origin_patch_shape = (1, 3, patch_size, patch_size)
 
-    # Initialize a tensor for downscaled patches
-    downscaled_patches = []
-    
-    for idx in indices:
-        row = idx // N
-        col = idx % N
-        patch_start_row = row * patch_size
-        patch_end_row = (row + 1) * patch_size
-        patch_start_col = col * patch_size
-        patch_end_col = (col + 1) * patch_size
+    # Calculate start and end row/col indices for all patches
+    rows = indices // N
+    cols = indices % N
+    patch_start_rows = rows * patch_size
+    patch_end_rows = patch_start_rows + patch_size
+    patch_start_cols = cols * patch_size
+    patch_end_cols = patch_start_cols + patch_size
 
-        # Extract and downscale the patch
-        patch = img[..., patch_start_row:patch_end_row, patch_start_col:patch_end_col]
-        downscaled_patch = F.interpolate(patch.unsqueeze(0), scale_factor=rf, mode='bilinear', align_corners=False).squeeze(0)
-        downscaled_patches.append(downscaled_patch)
+    # Collect all patches in one operation
+    patches = [img[..., patch_start_rows[i]:patch_end_rows[i], patch_start_cols[i]:patch_end_cols[i]]
+               for i in range(len(indices))]
 
-    downscaled_patch_shape = downscaled_patches[0].shape if downscaled_patches else origin_patch_shape
+    # Stack patches and downscale with adaptive avg pooling
+    stacked_patches = torch.stack(patches)
+    target_size = int(patch_size * rf)
+    downscaled_patches = F.adaptive_avg_pool2d(stacked_patches, output_size=(target_size, target_size))
+
+    # Extract the shape of downscaled patches
+    downscaled_patch_shape = downscaled_patches[0].shape if downscaled_patches.numel() > 0 else origin_patch_shape
 
     return N_orign, N_ds, origin_patch_shape, downscaled_patch_shape
