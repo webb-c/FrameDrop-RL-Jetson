@@ -34,5 +34,5 @@ def test_model(conf, start_time, video_processor, communicator=None, jetson_mode
         # _ = downscaling(input_frame, output, conf['sf'], conf['rf']) 
         # send_frame_shape = (1, 1, 1, 600)
 
-    fraction_value = np.prod(send_frame_shape) / 3*conf['img_size']*conf['img_size']
+    fraction_value = np.prod(send_frame_shape) / (3*conf['img_size']*conf['img_size'])
     return fraction_value

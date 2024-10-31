@@ -1,0 +1,2 @@
+start_time, end_time, method, video_path, sf, rf, avg_f1, fraction
+241031-135428,241031-140457,cao,./data/JN.mp4,0.05,0.2,0.2437988545920561,0.0849,

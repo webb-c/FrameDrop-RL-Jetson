@@ -11,7 +11,7 @@ def testor_cao(conf:Dict[str, Union[str, int, bool, float]], communicator, video
     sf, rf, accuracy = get_optimal_parameter(conf)
     conf['sf'] = sf
     conf['rf'] = rf
-    conf['accuracy'] = accuracy
+    conf['avg_f1'] = accuracy
     
     fraction_value = test_model(conf, start_time, video_processor, communicator, jetson_mode=True)
     rounded_fraction = round(fraction_value, 4)
