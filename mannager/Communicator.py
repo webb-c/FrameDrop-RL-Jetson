@@ -1,4 +1,4 @@
-import posix_ipc
+# import posix_ipc
 import sys
 
 
@@ -27,18 +27,18 @@ class Communicator(Exception):
         self.send_queue.close()
         self.recv_queue.close()
 
-        posix_ipc.unlink_message_queue(self.send_queue_name)
-        posix_ipc.unlink_message_queue(self.recv_queue_name)
+        # posix_ipc.unlink_message_queue(self.send_queue_name)
+        # posix_ipc.unlink_message_queue(self.recv_queue_name)
 
     def init_queue(self, queue_name:str):
-        try:
-            #queue = posix_ipc.MessageQueue(queue_name, posix_ipc.O_CREAT, max_message_size=self.buffer_size)
-            print(f"Queue {queue_name} successfully created. Buffer size: {self.buffer_size}")
-        except posix_ipc.ExistentialError:
-            print("Queue already exists, trying to open it.")
-            queue = posix_ipc.MessageQueue(queue_name)
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            sys.exit(1)
-        return queue
-        # pass
+        # try:
+        #     #queue = posix_ipc.MessageQueue(queue_name, posix_ipc.O_CREAT, max_message_size=self.buffer_size)
+        #     print(f"Queue {queue_name} successfully created. Buffer size: {self.buffer_size}")
+        # except posix_ipc.ExistentialError:
+        #     print("Queue already exists, trying to open it.")
+        #     queue = posix_ipc.MessageQueue(queue_name)
+        # except Exception as e:
+        #     print(f"Unexpected error: {e}")
+        #     sys.exit(1)
+        # return queue
+        pass

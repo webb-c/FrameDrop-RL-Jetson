@@ -58,47 +58,7 @@ def downscaling_for_send(img, feature, sf, rf):
 
 
 def downscaling_for_send_with_dummy(img, feature, sf, rf):
-    img = img.squeeze(0)
-    feature = feature.squeeze(0)
-    
-    N = feature.shape[-1]
-    R = img.shape[-1]
-    N_ds = int(N * N * (1-sf))
-    patch_size = R // N
-
-    flattened_features = feature.view(-1)
-    _, indices = torch.topk(flattened_features, N_ds, largest=False)  
-    
-    patch_indices = []
-    for idx in indices:
-        row = idx // N
-        col = idx % N
-        patch_indices.append((row, col))
-        
-    origin_patches = []
-    downscaled_patches = []
-    location_info = []
-    for i in range(N):
-        for j in range(N):
-            patch_start_row = i * patch_size
-            patch_end_row = (i + 1) * patch_size if i < N - 1 else R  
-            patch_start_col = j * patch_size
-            patch_end_col = (j + 1) * patch_size if j < N - 1 else R  
-
-            patch = img[..., patch_start_row:patch_end_row, patch_start_col:patch_end_col]
-            
-            if (i, j) in patch_indices:
-                downscaled_patch = F.interpolate(patch.unsqueeze(0), scale_factor=rf, mode='bilinear', align_corners=False).squeeze(0)
-                downscaled_patches.append(downscaled_patch)
-                location_info.append(0)
-            else:
-                origin_patches.append(patch)
-                location_info.append(1)
-    
-    len_origin_patches = len(origin_patches)
-    len_downscaled_patches = len(downscaled_patches)
-    origin_patches_shape = origin_patches[0].shape
-    downscaled_patches_shape = downscaled_patches[0].shape
+    len_origin_patches, len_downscaled_patches, origin_patches_shape, downscaled_patches_shape = downscaling(img, feature, sf, rf)
     
     origin_pixels = np.prod(origin_patches_shape) * len_origin_patches
     downscaled_pixels = np.prod(downscaled_patches_shape) * len_downscaled_patches
@@ -145,12 +105,13 @@ def downscaling(img, feature, sf, rf):
     N = feature.shape[-1]
     R = img.shape[-1]
     N_ds = int(N * N * (1-sf))
-
+    N_orign = N * N - N_ds
+    
     flattened_features = feature.view(-1)
     _, indices = torch.topk(flattened_features, N_ds, largest=False)  
     
     patch_size = R // N
-    compressed_img = img.clone()
+    origin_patch_shape = (1, 3, patch_size, patch_size)
     
     for idx in indices:
         row = idx // N
@@ -163,7 +124,6 @@ def downscaling(img, feature, sf, rf):
 
         patch = img[..., patch_start_row:patch_end_row, patch_start_col:patch_end_col]
         downscaled_patch = F.interpolate(patch.unsqueeze(0), scale_factor=rf, mode='bilinear', align_corners=False).squeeze(0)
-        
-        compressed_img[..., patch_start_row:patch_end_row, patch_start_col:patch_end_col] = resize(downscaled_patch, 0, (patch_end_row-patch_start_row, patch_end_col-patch_start_col))
+        downscaled_patch_shape = downscaled_patch.shape
 
-    return compressed_img
+    return N_orign, N_ds, origin_patch_shape, downscaled_patch_shape
