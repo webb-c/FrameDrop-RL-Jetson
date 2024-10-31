@@ -67,7 +67,7 @@ python run.py -method LRLO -video {video_name} -model {model_name} -V {} -jetson
 _where_ latency_constraint $\in [, ]$.
 
 ```bash
-python run.py -method cao -video {video_name} -latency {latency_csontraint} -jetson t
+python run.py -method cao -video {video_name} -latency {latency_constraint} -jetson t
 ```
 
 <br>
