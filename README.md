@@ -52,8 +52,22 @@ python run.py -method frameHopper -video {video_name} -model {model_name} -jetso
 | SD-1 | 240329-010114_videopath_SD_rewardmethod_11_importantmethod_021_radius_120_actiondim_5_threshold_0.2_statemethod_1.npy | 0.3998 |	0.815773421	|
 | JK-1 | 240331-145241_videopath_JK_rewardmethod_11_importantmethod_021_actiondim_15_threshold_0.1_statemethod_1.npy | 0.1412 |	0.825364566	|
 | JK-1 | 240328-140300_videopath_JK_rewardmethod_10_importantmethod_021_actiondim_5_threshold_0.35_statemethod_1.npy | 0.5639 |	0.932373083 |	
+
 ```bash
 python run.py -method LRLO -video {video_name} -model {model_name} -V {} -jetson t
+```
+
+### CAO (Content Aware Offloading)
+| video_name  | fraction | f1 score | latency_constraint |
+| --- | --- | --- | --- |
+| JN |     |    |    |
+| SD-1 |    |    |    |
+| JK-1 |    |    |    |
+
+_where_ latency_constraint $\in [, ]$.
+
+```bash
+python run.py -method cao -video {video_name} -latency {latency_csontraint} -jetson t
 ```
 
 <br>
@@ -84,6 +98,10 @@ python run.py -method LRLO -video {video_name} -model {model_name} -V {} -jetson
  ┃ ┣ 📜Parser.py
  ┃ ┗ 📜VideoProcessor.py
  ┣ 📂model
+ ┃ ┣ 📂cao
+ ┃ ┃ ┣ 📂profile
+ ┃ ┃ ┃ ┗ 📜{video_name}.csv
+ ┃ ┃ ┗ {cao_model_weight}.pth
  ┃ ┣ 📂FrameHopper
  ┃ ┃ ┣ 📂cluster
  ┃ ┃ ┃ ┗ 📜{video_name}.pkl
@@ -102,6 +120,13 @@ python run.py -method LRLO -video {video_name} -model {model_name} -V {} -jetson
  ┃ ┃ ┃ ┃ ┗ 📜{train_video_name}.json
  ┃ ┃ ┃ ┗ 📜{test_video_name}.yaml
  ┣ 📂src
+ ┃ ┣ 📂cao
+ ┃ ┃ ┣ 📂utils
+ ┃ ┃ ┃ ┣ 📜coarse_segmentation.py
+ ┃ ┃ ┃ ┣ 📜image_util.py
+ ┃ ┃ ┃ ┗ 📜util.py
+ ┃ ┃ ┣ 📜run.py
+ ┃ ┃ ┗ 📜test.py
  ┃ ┣ 📂FrameHopper
  ┃ ┃ ┣ 📂util
  ┃ ┃ ┃ ┣ 📜cluster.py
@@ -131,6 +156,7 @@ python run.py -method LRLO -video {video_name} -model {model_name} -V {} -jetson
  ┃ ┃ ┣ 📜run.py
  ┃ ┃ ┗ 📜simulator.py
  ┣ 📂utils
+ ┃ ┣ 📜joblib_to_pickle.py
  ┃ ┗ 📜util.py
  ┣ 📜.gitignore
  ┣ 📜README.md
