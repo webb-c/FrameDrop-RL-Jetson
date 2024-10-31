@@ -43,6 +43,11 @@ def parse_args() :
     parser.add_argument("-differ", "--differ", type=str, default="edge", help="diff vector that which type used feature")
     parser.add_argument("-metric", "--metric", type=str, default="mAP-all", help="testing metric")
     
+    ### Reducto
+    parser.add_argument('-latency', '--img_size', type=int, default=600, help='input image shape')
+    parser.add_argument('-latency', '--latency_constraint', type=int, default=0.001, help='latency constraint')
+    
+    
     return parser.parse_args()
 
 
@@ -140,5 +145,22 @@ def parse_reducto_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str
     conf["differ_types"] = conf['differencer']['types']
     
     conf['video_path'] = root_data + conf['video_name'] + "/subset0/segment001.mp4"
+    
+    return conf
+
+
+
+def parse_cao_test(conf:Dict[str, Union[str, int, bool, float]]) -> Dict[str, Union[str, int, bool, float]]:
+    root_data = "./data/"
+    root_model = "./model/cao/"
+    root_profile = "./model/cao/profile/"
+    dataset_mapping = {
+        'JK-1' : 'JK',
+        'SD-1' : 'SD',
+        'JN' : 'JN'
+    }
+    conf['profile_path'] = root_profile + dataset_mapping[conf['video_name']] + '.csv'
+    conf['weight_path'] = root_model + "1002-1423.pth"
+    conf['video_path'] = os.path.join(root_data, conf['video_name'] + ".mp4")
     
     return conf
